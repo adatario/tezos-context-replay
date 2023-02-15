@@ -23,25 +23,49 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(** {1 Tezos Context Events}
+
+    This library defines events that log calls to the tezos-context API.
+
+    A serialization of the events is provided using {!Data_encoding}.
+ *)
+
+module Sigs = Tezos_context_sigs.Context
+module Context = Tezos_context_disk.Context
+
+(** {2 Tracker}
+
+    Certain arguments or return values to the Tezos Context API are
+    too big to efficiently log ([Context.t], [Context.index] and
+    [Context.tree]). Instead of logging an exact representation of
+    such values, we assign every instance of such a type an identifier
+    that is logged. As creation and mutation of such values goes
+    exclusively trough the [tezos-context] API, we can track all
+    instances of objects and can re-use the identiiers when replaying
+    a trace of events.
+
+ *)
+
 module Tracker : sig
-  module Index : sig
+  module type TRACKED = sig
+    type t
+    type unwrapped
+
+    (* TODO: make the id type opaque *)
     type id = int64
 
     val encoding_id : id Data_encoding.t
+    val wrap : unwrapped -> t
+    val unwrap : t -> unwrapped
+    val id : t -> id
   end
 
-  module Context : sig
-    type id = int64
-
-    val encoding_id : id Data_encoding.t
-  end
-
-  module Tree : sig
-    type id = int64
-
-    val encoding_id : id Data_encoding.t
-  end
+  module Index : TRACKED with type unwrapped = Context.index
+  module Tree : TRACKED with type unwrapped = Context.tree
+  module Context : TRACKED with type unwrapped = Context.context
 end
+
+(** {2 Events} *)
 
 type ('input, 'output) fn
 
@@ -51,9 +75,6 @@ val encoding_fn :
   'input Data_encoding.t ->
   'output Data_encoding.t ->
   ('input, 'output) fn Data_encoding.t
-
-module Sigs = Tezos_context_sigs.Context
-module Context = Tezos_context_disk.Context
 
 module Tree : sig
   type list_args = {

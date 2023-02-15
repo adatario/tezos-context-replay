@@ -23,17 +23,9 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-module Tracker = struct
-  module Generic = struct
-    type id = int64
-
-    let encoding_id = Data_encoding.int64
-  end
-
-  module Index = Generic
-  module Context = Generic
-  module Tree = Generic
-end
+module Sigs = Tezos_context_sigs.Context
+module Context = Tezos_context_disk.Context
+module Tracker = Tracker
 
 type ('input, 'output) fn = 'input * 'output
 
@@ -46,9 +38,6 @@ let encoding_fn input output =
 let encoding_key =
   let open Data_encoding in
   list string
-
-module Sigs = Tezos_context_sigs.Context
-module Context = Tezos_context_disk.Context
 
 module Tree = struct
   type list_args = {
