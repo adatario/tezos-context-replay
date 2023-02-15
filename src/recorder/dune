@@ -1,8 +1,8 @@
 (library
- (name tezos_context_replay_recorder)
- (public_name tezos-context-replay.recorder)
+ (name tezos_context_recorder)
+ (public_name tezos-context-recorder)
  (libraries tezos-context.disk
-            tezos-context-replay.events)
+            tezos-context-events)
  (flags
   (:standard)
   -open Tezos_base.TzPervasives

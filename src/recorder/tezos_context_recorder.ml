@@ -31,15 +31,14 @@ module Context = struct
 
   module Recorder = struct
     include Internal_event.Simple
-    include Tezos_context_replay_events
+    include Tezos_context_events
 
     let section = [ "trace"; "node"; "context"; "disk" ]
     let level = Internal_event.Debug
 
     let call =
-      declare_1 ~section ~level ~name:"tezos-context API call"
-        ~msg:"recording call to Context.mem" ~pp1:pp
-        ("event", Tezos_context_replay_events.encoding_t)
+      declare_1 ~section ~level ~name:"tezos-context recorder"
+        ~msg:"recording call to tezos-context" ~pp1:pp ("event", encoding_t)
 
     let record event = emit call event
   end

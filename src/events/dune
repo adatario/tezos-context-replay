@@ -1,6 +1,6 @@
 (library
- (name tezos_context_replay_events)
- (public_name tezos-context-replay.events)
+ (name tezos_context_events)
+ (public_name tezos-context-events)
  (libraries tezos-context.disk tezos-crypto)
  (flags
   (:standard)
