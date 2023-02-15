@@ -1,0 +1,8 @@
+(library
+ (name tezos_context_replay_events)
+ (public_name tezos-context-replay.events)
+ (libraries tezos-context.disk tezos-crypto)
+ (flags
+  (:standard)
+  -open Tezos_base.TzPervasives
+  -open Tezos_stdlib))
