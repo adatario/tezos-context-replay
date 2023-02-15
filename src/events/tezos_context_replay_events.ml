@@ -37,6 +37,8 @@ end
 
 type ('input, 'output) fn = 'input * 'output
 
+let fn input output = (input, output)
+
 let encoding_fn input output =
   let open Data_encoding in
   tup2 input output
@@ -143,24 +145,40 @@ let encoding_init_args =
        (req "indexing_strategy" encoding_indexing_strategy)
        (req "indexing_log_size" int32)
 
-type t = Tree of Tree.t | Init of (init_args, Tracker.Index.id) fn
+type t =
+  | Tree of Tree.t
+  | Mem of (Tracker.Context.id * Context.key, bool) fn
+  | Init of (init_args, Tracker.Index.id) fn
 
 let encoding_t =
   let open Data_encoding in
   let tree_tag = 0 in
-  let init_tag = 1
+  let mem_tag = 1
+  and mem_encoding =
+    encoding_fn (tup2 Tracker.Context.encoding_id encoding_key) bool
+  in
+  let init_tag = 2
   and init_encoding =
     encoding_fn encoding_init_args Tracker.Index.encoding_id
   in
   matching
     (function
       | Tree tree -> matched tree_tag Tree.encoding_t tree
+      | Mem v -> matched mem_tag mem_encoding v
       | Init v -> matched init_tag init_encoding v)
     [
       case ~title:"Tree" (Tag tree_tag) Tree.encoding_t
         (function Tree t -> Some t | _ -> None)
         (fun tree -> Tree tree);
+      case ~title:"mem" (Tag mem_tag) mem_encoding
+        (function Mem v -> Some v | _ -> None)
+        (fun v -> Mem v);
       case ~title:"init" (Tag init_tag) init_encoding
         (function Init v -> Some v | _ -> None)
         (fun v -> Init v);
     ]
+
+let pp ppf = function
+  | Tree _tree -> Fmt.pf ppf "Tree"
+  | Mem _ -> Fmt.pf ppf "mem"
+  | Init _ -> Fmt.pf ppf "init"

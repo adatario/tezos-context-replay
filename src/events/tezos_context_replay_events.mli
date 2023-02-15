@@ -25,25 +25,27 @@
 
 module Tracker : sig
   module Index : sig
-    type id
+    type id = int64
 
     val encoding_id : id Data_encoding.t
   end
 
   module Context : sig
-    type id
+    type id = int64
 
     val encoding_id : id Data_encoding.t
   end
 
   module Tree : sig
-    type id
+    type id = int64
 
     val encoding_id : id Data_encoding.t
   end
 end
 
 type ('input, 'output) fn
+
+val fn : 'input -> 'output -> ('input, 'output) fn
 
 val encoding_fn :
   'input Data_encoding.t ->
@@ -98,6 +100,10 @@ type init_args = {
       (* path : string *)
 }
 
-type t = Tree of Tree.t | Init of (init_args, Tracker.Index.id) fn
+type t =
+  | Tree of Tree.t
+  | Mem of (Tracker.Context.id * Context.key, bool) fn
+  | Init of (init_args, Tracker.Index.id) fn
 
 val encoding_t : t Data_encoding.t
+val pp : t Fmt.t
