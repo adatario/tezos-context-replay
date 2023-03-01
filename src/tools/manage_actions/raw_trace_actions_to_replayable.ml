@@ -379,10 +379,34 @@ let event_infos =
                 Def1.Tree.Remove ((scopet ids t, x), scopet ids t') |> to_tree);
           }
       | List _ -> (* see List for rationale *) crash
-      | Fold_start _ -> (* see List for rationale *) crash
-      | Fold_step_enter _ -> crash
-      | Fold_step_exit _ -> crash
-      | Fold_end _ -> crash)
+      | Fold_start (x, tree, key) ->
+          {
+            rank = `Use;
+            tracker_ids = ([ tree ], [], []);
+            to_v1 =
+              (fun ids ->
+                Def1.Tree.Fold_start (x, scopet ids tree, key) |> to_tree);
+          }
+      | Fold_step_enter t ->
+          {
+            rank = `Use;
+            tracker_ids = ([ t ], [], []);
+            to_v1 =
+              (fun ids -> Def1.Tree.Fold_step_enter (scopet ids t) |> to_tree);
+          }
+      | Fold_step_exit t ->
+          {
+            rank = `Use;
+            tracker_ids = ([ t ], [], []);
+            to_v1 =
+              (fun ids -> Def1.Tree.Fold_step_exit (scopet ids t) |> to_tree);
+          }
+      | Fold_end i ->
+          {
+            rank = `Use;
+            tracker_ids = ([], [], []);
+            to_v1 = (fun _ -> Def1.Tree.Fold_end i |> to_tree);
+          })
   | Find_tree ((c, x), t') ->
       {
         rank = `Use;

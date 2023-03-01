@@ -257,6 +257,10 @@ module V0 = struct
       | Add of (tree * key * value, tree) fn
       | Add_tree of (tree * key * tree, tree) fn
       | Remove of (tree * key, tree) fn
+      | Fold_start of (depth option * order) * tree * key
+      | Fold_step_enter of tree (* not recording step *)
+      | Fold_step_exit of tree
+      | Fold_end of int
     [@@deriving repr]
   end
 

@@ -544,7 +544,10 @@ struct
         | Find_tree data -> Tree.exec_find_tree rs data
         | Add data -> Tree.exec_add rs data
         | Add_tree data -> Tree.exec_add_tree rs data
-        | Remove data -> Tree.exec_remove rs data)
+        | Remove data -> Tree.exec_remove rs data
+        | (Fold_start _ | Fold_step_enter _ | Fold_step_exit _ | Fold_end _) as
+          ev ->
+            Fmt.failwith "Got %a at %s" (Repr.pp Def.Tree.t) ev __LOC__)
     | Find_tree data -> exec_find_tree rs data
     | Add_tree data -> exec_add_tree rs data
     | Mem data -> exec_mem rs data
@@ -818,6 +821,35 @@ struct
         Lwt.return_unit
     | ev -> Fmt.failwith "Got %a at %s" (Repr.pp Def.event_t) ev __LOC__
 
+  and tree_exec_fold rs depth order tree key =
+    let tree = on_lhs_tree rs tree in
+    let f _k tree () = exec_tree_fold_step rs tree in
+
+    let* () = Context.Tree.fold ?depth ~order tree key ~init:() ~f in
+    Lwt.return_unit
+
+  and exec_tree_fold_step rs tr' =
+    let recursion_depth = rs.recursion_depth in
+    rs.recursion_depth <- recursion_depth + 1;
+
+    let* () =
+      rs.current_event_idx <- rs.current_event_idx + 1;
+      match rs.current_row.ops.(rs.current_event_idx) with
+      | Def.(Tree (Tree.Fold_step_enter tr)) ->
+          on_rhs_tree rs tr tr';
+          exec_next_events rs
+      | ev -> Fmt.failwith "Got %a at %s" (Repr.pp Def.event_t) ev __LOC__
+    in
+
+    assert (rs.recursion_depth = recursion_depth + 1);
+    rs.recursion_depth <- recursion_depth;
+
+    match rs.current_row.ops.(rs.current_event_idx) with
+    | Def.(Tree (Tree.Fold_step_exit tr)) ->
+        let _tr' : Context.tree = on_lhs_tree rs tr in
+        Lwt.return_unit
+    | ev -> Fmt.failwith "Got %a at %s" (Repr.pp Def.event_t) ev __LOC__
+
   and exec_next_events rs =
     rs.current_event_idx <- rs.current_event_idx + 1;
     let events = rs.current_row.Def.ops in
@@ -832,6 +864,9 @@ struct
     | Commit_genesis_start data ->
         assert (rs.recursion_depth = 0);
         exec_commit_genesis rs data
+    | Tree (Def.Tree.Fold_start ((depth, order), tree, key)) ->
+        let* () = tree_exec_fold rs depth order tree key in
+        (exec_next_events [@tailcall]) rs
     | Fold_start ((x, x'), y, z) ->
         let* () = exec_fold rs x x' y z in
         (exec_next_events [@tailcall]) rs
