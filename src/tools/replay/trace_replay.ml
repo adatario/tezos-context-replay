@@ -888,27 +888,29 @@ struct
     | Def.Commit data ->
         assert (rs.recursion_depth = 0);
         assert (i = commit_idx);
-        exec_commit rs data
+        Lwt.return_unit (* exec_commit rs data *)
     | Commit_genesis_start data ->
         assert (rs.recursion_depth = 0);
-        exec_commit_genesis rs data
+        Lwt.return_unit (* exec_commit_genesis rs data *)
     | Tree (Def.Tree.Fold_start ((depth, order), tree, key)) ->
-        let* () = exec_tree_fold rs depth order tree key in
+        (* let* () = exec_tree_fold rs depth order tree key in *)
         (exec_next_events [@tailcall]) rs
     | Tree (Def.Tree.Fold_step_exit _) ->
         (* Will destack to [exec_tree_fold_step] *)
-        Lwt.return_unit
+        (exec_next_events [@tailcall]) rs
+        (* Lwt.return_unit *)
     | Fold_start ((x, x'), y, z) ->
-        let* () = exec_fold rs x x' y z in
+        (* let* () = exec_fold rs x x' y z in *)
         (exec_next_events [@tailcall]) rs
     | Patch_context_exit (_, _) ->
         (* Will destack to [exec_patch_context] *)
-        Lwt.return_unit
+        (* Lwt.return_unit *)
+        (exec_next_events [@tailcall]) rs
     | Fold_step_exit _ ->
         (* Will destack to [exec_fold_step] *)
         Lwt.return_unit
     | _ ->
-        let* () = exec_simple_event rs ev in
+        (* let* () = exec_simple_event rs ev in *)
         (exec_next_events [@tailcall]) rs
 
   let exec_block : [< t ] -> _ -> _ -> warm Lwt.t =
